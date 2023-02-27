@@ -1,0 +1,8 @@
+{
+    "log_file": "../data/BGL/BGL.log_structured.csv",
+    "random_sessions": true,
+    "test_ratio": 0.2,
+    "time_range": 21600,
+    "train_anomaly_ratio": 0,
+    "train_ratio": null
+}
