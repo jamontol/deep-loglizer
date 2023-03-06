@@ -249,7 +249,7 @@ class ForcastBasedModel(nn.Module):
                     "top{}-acc".format(topk): window_topk_acc,
                     "pred": pred
                 }
-                logging.info({k: f"{v:.3f}" for k, v in eval_results.items()})
+                logging.info({k: f"{v:.3f}" for k, v in eval_results.items() if k != 'pred'})
                 if eval_results["f1"] >= best_f1:
                     best_result = eval_results
                     best_f1 = eval_results["f1"]
