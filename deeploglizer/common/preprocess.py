@@ -350,15 +350,15 @@ class FeatureExtractor(BaseEstimator):
         for session_id, data_dict in session_dict.items():
             feature_dict = defaultdict(list)
             windows = data_dict["windows"]
-            # generate sequential feautres # sliding windows on logid list
+            # generate sequential features # sliding windows on logid list
             if self.feature_type == "sequentials":
                 feature_dict["sequentials"] = self.__windows2sequential(windows)
 
-            # generate semantics feautres # use logid -> token id list
+            # generate semantics features # use logid -> token id list
             if self.feature_type == "semantics":
                 feature_dict["semantics"] = self.__window2semantics(windows, log2idx)
 
-            # generate quantitative feautres # count logid in each window
+            # generate quantitative features # count logid in each window
             if self.feature_type == "quantitatives":
                 feature_dict["quantitatives"] = self.__windows2quantitative(windows)
 

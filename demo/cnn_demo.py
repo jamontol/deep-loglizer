@@ -35,7 +35,7 @@ parser.add_argument("--use_tfidf", action="store_true")
 parser.add_argument("--pretrain_path", default=None, type=str)
 parser.add_argument("--max_token_len", default=50, type=int)
 parser.add_argument("--min_token_count", default=1, type=int)
-# Uncomment the following to use pretrained word embeddings. The "embedding_dim" should be set as 300
+# Uncomment the following to use pretrained word embeddings. The "embedding_dim" should be set as 300 (fasttext)
 # parser.add_argument(
 #     "--pretrain_path", default="../data/pretrain/wiki-news-300d-1M.vec", type=str
 # )

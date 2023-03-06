@@ -25,7 +25,7 @@ parser.add_argument("--embedding_dim", default=32, type=int)
 ##### Dataset params
 parser.add_argument("--dataset", default="HDFS", type=str)
 parser.add_argument(
-    "--data_dir", default="../data/processed/HDFS_100k/hdfs_0.0_tar", type=str
+    "--data_dir", default="data/processed/HDFS/hdfs_0.0_tar", type=str
 )
 parser.add_argument("--window_size", default=10, type=int)
 parser.add_argument("--stride", default=1, type=int)
@@ -36,7 +36,7 @@ parser.add_argument("--label_type", default="next_log", type=str)
 parser.add_argument("--use_tfidf", action="store_true")
 parser.add_argument("--max_token_len", default=50, type=int)
 parser.add_argument("--min_token_count", default=1, type=int)
-# Uncomment the following to use pretrained word embeddings. The "embedding_dim" should be set as 300
+# Uncomment the following to use pretrained word embeddings. The "embedding_dim" should be set as 300   (fasttext)
 # parser.add_argument(
 #     "--pretrain_path", default="../data/pretrain/wiki-news-300d-1M.vec", type=str
 # )
@@ -45,7 +45,7 @@ parser.add_argument("--min_token_count", default=1, type=int)
 parser.add_argument("--epoches", default=100, type=int)
 parser.add_argument("--batch_size", default=1024, type=int)
 parser.add_argument("--learning_rate", default=0.01, type=float)
-parser.add_argument("--topk", default=10, type=int)
+parser.add_argument("--topk", default=3, type=int)
 parser.add_argument("--patience", default=3, type=int)
 
 ##### Others
