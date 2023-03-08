@@ -232,7 +232,9 @@ class FeatureExtractor(BaseEstimator):
             log_counter = Counter(window)
             for logid, log_count in log_counter.items():
                 feature[int(logid)] = log_count
-            total_features.append(feature[1:])  # discard the position of padding
+            #total_features.append(feature[1:])  # discard the position of padding
+            total_features.append(np.array(feature[1:])[:, np.newaxis])  # discard the position of padding
+
         return np.array(total_features)
 
     def __windows2sequential(self, windows):
@@ -282,7 +284,7 @@ class FeatureExtractor(BaseEstimator):
         )
         self.log2id_train = {v: k for k, v in self.id2log_train.items()}
 
-        logging.info("{} tempaltes are found.".format(len(self.log2id_train)))
+        logging.info("{} templates are found.".format(len(self.log2id_train)))
 
         if self.label_type == "next_log":
             self.meta_data["num_labels"] = len(self.log2id_train)
@@ -309,7 +311,9 @@ class FeatureExtractor(BaseEstimator):
             if self.use_tfidf:
                 self.vocab.fit_tfidf(total_logs)
 
-        elif self.feature_type == "sequentials":
+        #elif self.feature_type == "sequentials":
+        elif any(map(self.feature_type.__contains__, ["sequentials", "quantitatives"])):
+
             self.meta_data["vocab_size"] = len(self.log2id_train)
 
         else:
@@ -351,7 +355,8 @@ class FeatureExtractor(BaseEstimator):
             feature_dict = defaultdict(list)
             windows = data_dict["windows"]
             # generate sequential features # sliding windows on logid list
-            if self.feature_type == "sequentials":
+            # if self.feature_type == "sequentials":
+            if "sequentials" in self.feature_type:
                 feature_dict["sequentials"] = self.__windows2sequential(windows)
 
             # generate semantics features # use logid -> token id list
@@ -359,7 +364,8 @@ class FeatureExtractor(BaseEstimator):
                 feature_dict["semantics"] = self.__window2semantics(windows, log2idx)
 
             # generate quantitative features # count logid in each window
-            if self.feature_type == "quantitatives":
+            #if self.feature_type == "quantitatives":
+            if "quantitatives" in self.feature_type:
                 feature_dict["quantitatives"] = self.__windows2quantitative(windows)
 
             session_dict[session_id]["features"] = feature_dict

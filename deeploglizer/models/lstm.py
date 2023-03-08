@@ -77,6 +77,7 @@ class LSTM(ForcastBasedModel):
         self.use_attention = use_attention
         self.use_tfidf = use_tfidf
         self.embedding_dim = embedding_dim
+        
         self.rnn = nn.LSTM(
             input_size=embedding_dim,
             hidden_size=self.hidden_size,
@@ -84,13 +85,20 @@ class LSTM(ForcastBasedModel):
             num_layers=num_layers,
             bidirectional=(self.num_directions == 2),
         )
+        self.rnn_extra = nn.LSTM(
+            input_size=1, #added dimension for quantitative features
+            hidden_size=self.hidden_size,
+            batch_first=True,
+            num_layers=num_layers,
+            bidirectional=(self.num_directions == 2),
+        )
+
         if self.use_attention:
             assert window_size is not None, "window size must be set if use attention"
             self.attn = Attention(hidden_size * num_directions, window_size)
         self.criterion = nn.CrossEntropyLoss()
         self.prediction_layer = nn.Linear(
-            self.hidden_size * self.num_directions, num_labels
-        )
+            self.hidden_size * self.num_directions* len(self.feature_type), num_labels)
 
     def forward(self, input_dict):
         if self.label_type == "anomaly":
@@ -98,7 +106,10 @@ class LSTM(ForcastBasedModel):
         elif self.label_type == "next_log":
             y = input_dict["window_labels"].long().view(-1)
         self.batch_size = y.size()[0]
-        x = input_dict["features"]
+
+        features = input_dict["features"]
+
+        x = features[0]
         x = self.embedder(x)
 
         if self.feature_type == "semantics":
@@ -111,7 +122,12 @@ class LSTM(ForcastBasedModel):
             representation = self.attn(outputs)
         else:
             # representation = outputs.mean(dim=1)
-            representation = outputs[:, -1, :]
+            representation = outputs[:, -1, :] # last step of LSTM (batch_size, window_size, embeddings_zize)
+
+        if len(input_dict["features"]) > 1: # count vector or another secuence feature
+            x_extra = features[1]
+            outputs_extra, _ = self.rnn_extra(x_extra.float())
+            representation = torch.cat((representation, outputs_extra[:, -1, :]), -1)
 
         logits = self.prediction_layer(representation)
         y_pred = logits.softmax(dim=-1)

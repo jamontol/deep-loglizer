@@ -68,7 +68,7 @@ class ForcastBasedModel(nn.Module):
 
         os.makedirs(model_save_path, exist_ok=True)
         self.model_save_file = os.path.join(model_save_path, "model.ckpt")
-        if feature_type in ["sequentials", "semantics"]:
+        if any(map(self.feature_type.__contains__, ["sequentials", "quantitatives"])): #feature_type in ["sequentials", "semantics"]:
             self.embedder = Embedder(
                 meta_data["vocab_size"],
                 embedding_dim=embedding_dim,
@@ -191,7 +191,9 @@ class ForcastBasedModel(nn.Module):
                 store_dict["window_labels"].extend(
                     tensor2flatten_arr(batch_input["window_labels"])
                 )
-                store_dict["x"].extend(batch_input["features"].data.cpu().numpy())
+                for ind, feature_input in enumerate(batch_input["features"]):
+                    store_dict[f"x{ind}"].extend(feature_input.data.cpu().numpy())
+
                 store_dict["y_pred_topk"].extend(y_pred_topk.data.cpu().numpy())
                 store_dict["y_prob_topk"].extend(y_prob_topk.data.cpu().numpy())
             infer_end = time.time()
@@ -258,8 +260,11 @@ class ForcastBasedModel(nn.Module):
             return best_result
 
     def __input2device(self, batch_input):
-        return {k: v.to(self.device) for k, v in batch_input.items()}
-
+        #dict_batch = {k: v.to(self.device) for k, v in batch_input.items()}
+        dict_batch = {k: v.to(self.device) for k, v in batch_input.items() if k != 'features'}
+        dict_batch['features'] = [feature.to(self.device) for feature in batch_input['features']]
+        return dict_batch
+        
     def save_model(self):
         logging.info("Saving model to {}".format(self.model_save_file))
         try:

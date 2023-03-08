@@ -12,7 +12,7 @@ from datetime import datetime
 
 
 def dump_final_results(params, eval_results, model):
-    result_str = "\t".join(["{}-{:.4f}".format(k, v) for k, v in eval_results.items()])
+    result_str = "\t".join(["{}-{:.4f}".format(k, v) for k, v in eval_results.items() if k != 'pred'])
 
     key_info = [
         "dataset",

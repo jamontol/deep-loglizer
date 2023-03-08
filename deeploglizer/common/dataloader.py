@@ -54,14 +54,24 @@ class log_dataset(Dataset):
     def __init__(self, session_dict, feature_type="semantics"):
         flatten_data_list = []
         # flatten all sessions
+        
         for session_idx, data_dict in enumerate(session_dict.values()):
-            features = data_dict["features"][feature_type]
+
+            features_list = []
+
+            if "semantics" in feature_type:
+                features_list.append(data_dict["features"]["semantics"])
+            if "sequentials" in feature_type:
+                features_list.append(data_dict["features"]["sequentials"]) # features = data_dict["features"]["sequentials"] #
+            if "quantitatives" in feature_type:
+                features_list.append(data_dict["features"]["quantitatives"])
+
             window_labels = data_dict["window_labels"]
             window_anomalies = data_dict["window_anomalies"]
             for window_idx in range(len(window_labels)):
                 sample = {
                     "session_idx": session_idx,  # not session id
-                    "features": features[window_idx],
+                    "features":  [feature[window_idx] for feature in features_list], # features[window_idx] ,
                     "window_labels": window_labels[window_idx],
                     "window_anomalies": window_anomalies[window_idx],
                 }
