@@ -18,7 +18,6 @@ from deeploglizer.common.utils import (
     load_pickle,
 )
 
-
 def load_vectors(fname):
     logging.info("Loading vectors from {}.".format(fname))
     if fname.endswith("pkl"):
@@ -55,24 +54,47 @@ class Vocab:
                 word_lst.extend(res)
         return word_lst
 
-    def gen_pretrain_matrix(self, pretrain_path):
+    def gen_pretrain_matrix(self, pretrain_path, type="semantic"):
+
         logging.info("Generating a pretrain matrix.")
-        word_vec_dict = load_vectors(pretrain_path)
-        vocab_size = len(self.word2idx)
-        pretrain_matrix = np.zeros([vocab_size, 300])
-        oov_count = 0
-        # print(list(self.word2idx.keys()))
-        # exit()
-        for word, idx in tqdm(self.word2idx.items()):
-            if word in word_vec_dict:
-                pretrain_matrix[idx] = word_vec_dict[word]
-            else:
-                oov_count += 1
-        logging.info(
-            "{}/{} words are assgined pretrained vectors.".format(
-                vocab_size - oov_count, vocab_size
+
+        if type == "semantics":
+
+            word_vec_dict = load_vectors(pretrain_path)
+            vocab_size = len(self.word2idx)
+            pretrain_matrix = np.zeros([vocab_size, 300])
+            oov_count = 0
+            # print(list(self.word2idx.keys()))
+            # exit()
+            for word, idx in tqdm(self.word2idx.items()):
+                if word in word_vec_dict:
+                    pretrain_matrix[idx] = word_vec_dict[word]
+                else:
+                    oov_count += 1
+            logging.info(
+                "{}/{} words are assigned pretrained vectors.".format(
+                    vocab_size - oov_count, vocab_size
+                )
             )
-        )
+
+        elif type == "sentences":
+
+            sentence_vec_dict = load_vectors(pretrain_path)
+            vocab_size = len(self.sentence2idx)
+            pretrain_matrix = np.zeros([vocab_size, sentence_vec_dict.values[0].shape[0]])
+
+            for sentence, idx in tqdm(self.sentence2idx.items()):
+                if sentence in sentence_vec_dict:
+                    pretrain_matrix[idx] = sentence_vec_dict[sentence]
+                else:
+                    #TODO search for most similar 
+                    oov_count += 1
+            logging.info(
+                "{}/{} sentences are assigned pretrained vectors.".format(
+                    vocab_size - oov_count, vocab_size
+                )
+            )
+
         return torch.from_numpy(pretrain_matrix)
 
     def trp(self, l, n):
@@ -82,20 +104,31 @@ class Vocab:
             r.extend(list([0]) * (n - len(r)))
         return r
 
-    def build_vocab(self, logs):
-        token_counter = Counter()
-        for log in logs:
-            tokens = self.__tokenize_log(log)
-            token_counter.update(tokens)
-        valid_tokens = set(
-            [
-                word
-                for word, count in token_counter.items()
-                if count >= self.min_token_count
-            ]
-        )
-        self.word2idx.update({word: idx for idx, word in enumerate(valid_tokens, 2)})
-        self.token_vocab_size = len(self.word2idx)
+    def build_vocab(self, logs, type:str = "semantics"):
+
+        if type == "semantics":
+
+            token_counter = Counter()
+            for log in logs:
+                tokens = self.__tokenize_log(log)
+                token_counter.update(tokens)
+            valid_tokens = set(
+                [
+                    word
+                    for word, count in token_counter.items()
+                    if count >= self.min_token_count
+                ]
+            )
+
+            self.word2idx.update({word: idx for idx, word in enumerate(valid_tokens, 2)})
+            self.token_vocab_size = len(self.word2idx)
+        
+        elif type == "sentences":
+
+            for log in logs: #all logs in train
+
+                self.sentence2idx =  logs #training log2id_train
+
 
     def fit_tfidf(self, total_logs):
         logging.info("Fitting tfidf.")
@@ -311,6 +344,21 @@ class FeatureExtractor(BaseEstimator):
             if self.use_tfidf:
                 self.vocab.fit_tfidf(total_logs)
 
+        if self.feature_type == "sentences":
+            logging.info("Using sentences.")
+            logging.info("Building vocab.")
+            self.vocab.build_vocab(self.log2id_train)
+            logging.info("Building vocab done.")
+            self.meta_data["vocab_size"] = self.vocab.token_vocab_size
+
+            if self.pretrain_path is not None:
+                logging.info(
+                    "Using pretrain sentence embeddings from {}".format(self.pretrain_path)
+                )
+                self.meta_data["pretrain_matrix"] = self.vocab.gen_pretrain_matrix(
+                    self.pretrain_path
+                )
+
         #elif self.feature_type == "sequentials":
         elif any(map(self.feature_type.__contains__, ["sequentials", "quantitatives"])):
 
@@ -325,6 +373,7 @@ class FeatureExtractor(BaseEstimator):
 
     def transform(self, session_dict, datatype="train"):
         logging.info("Transforming {} data.".format(datatype))
+
         ulog = set(itertools.chain(*[v["templates"] for k, v in session_dict.items()]))
         if datatype == "test":
             # handle new logs
@@ -342,6 +391,15 @@ class FeatureExtractor(BaseEstimator):
         else:
             self.__generate_windows(session_dict, self.stride)
 
+        if self.feature_type == "sentences":
+
+            self.id2log_test.update({idx: log for idx, log in enumerate(self.ulog, 2)})
+
+            indice = np.array(self.vocab.logs2idx(ulog))
+            log2idx = {log: indice[idx] for idx, log in enumerate(ulog)}
+            log2idx["PADDING"] = np.zeros(indice.shape[1]).reshape(-1)
+            logging.info("Extracting sentence features.")
+
         if self.feature_type == "semantics":
             if self.use_tfidf:
                 indice = self.vocab.transform_tfidf(ulog).toarray()
@@ -349,7 +407,7 @@ class FeatureExtractor(BaseEstimator):
                 indice = np.array(self.vocab.logs2idx(ulog))
             log2idx = {log: indice[idx] for idx, log in enumerate(ulog)}
             log2idx["PADDING"] = np.zeros(indice.shape[1]).reshape(-1)
-            logging.info("Extracting semantic features.")
+            logging.info("Extracting sentence features.")
 
         for session_id, data_dict in session_dict.items():
             feature_dict = defaultdict(list)
@@ -362,6 +420,9 @@ class FeatureExtractor(BaseEstimator):
             # generate semantics features # use logid -> token id list
             if self.feature_type == "semantics":
                 feature_dict["semantics"] = self.__window2semantics(windows, log2idx)
+
+            if self.feature_type == "sentences":
+                feature_dict["sentences"] = self.__window2sentences(windows, log2idx) # TODO
 
             # generate quantitative features # count logid in each window
             #if self.feature_type == "quantitatives":

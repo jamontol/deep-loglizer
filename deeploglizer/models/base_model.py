@@ -68,7 +68,7 @@ class ForcastBasedModel(nn.Module):
 
         os.makedirs(model_save_path, exist_ok=True)
         self.model_save_file = os.path.join(model_save_path, "model.ckpt")
-        if any(map(self.feature_type.__contains__, ["sequentials", "quantitatives"])): #feature_type in ["sequentials", "semantics"]:
+        if any(map(self.feature_type.__contains__, ["sequentials", "semantics", "sentences"])): #feature_type in ["sequentials", "semantics"]:
             self.embedder = Embedder(
                 meta_data["vocab_size"],
                 embedding_dim=embedding_dim,
@@ -236,6 +236,9 @@ class ForcastBasedModel(nn.Module):
                 session_df = (
                     store_df[use_cols].groupby("session_idx", as_index=False).sum()
                 )
+
+                window_pred_anomaly = store_df[use_cols].groupby("session_idx")[f"window_pred_anomaly_{self.topk}"].apply(list).to_frame()
+
             else:
                 session_df = store_df
             # session_df.to_csv("session_{}_2.csv".format(dtype), index=False)
@@ -244,12 +247,18 @@ class ForcastBasedModel(nn.Module):
                 pred = (session_df[f"window_pred_anomaly_{topk}"] > 0).astype(int)
                 y = (session_df["window_anomalies"] > 0).astype(int)
                 window_topk_acc = 1 - store_df[f"window_pred_anomaly_{topk}"].sum() / len(store_df)
+
+                results=None
+                if topk == self.topk: 
+                    results = pd.concat([session_df['session_idx'], pred, window_pred_anomaly],axis=1)
+
                 eval_results = {
                     "f1": f1_score(y, pred),
                     "rc": recall_score(y, pred),
                     "pc": precision_score(y, pred),
                     "top{}-acc".format(topk): window_topk_acc,
-                    "pred": pred
+                    "pred": results
+                    #"abnormal_log": [0,0,0,0,0,1,0,0,1]
                 }
                 logging.info({k: f"{v:.3f}" for k, v in eval_results.items() if k != 'pred'})
                 if eval_results["f1"] >= best_f1:
