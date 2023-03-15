@@ -237,7 +237,7 @@ class ForcastBasedModel(nn.Module):
                     store_df[use_cols].groupby("session_idx", as_index=False).sum()
                 )
 
-                window_pred_anomaly = store_df[use_cols].groupby("session_idx")[f"window_pred_anomaly_{self.topk}"].apply(list).to_frame()
+                window_pred_anomaly = store_df[use_cols].groupby("session_idx")[f"window_pred_anomaly_{self.topk}"].apply(list).to_frame(name=f"window_list_anomaly_{self.topk}")
 
             else:
                 session_df = store_df
