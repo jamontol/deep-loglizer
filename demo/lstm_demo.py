@@ -20,7 +20,9 @@ parser.add_argument("--use_attention", action="store_true")
 parser.add_argument("--hidden_size", default=128, type=int)
 parser.add_argument("--num_layers", default=2, type=int)
 parser.add_argument("--num_directions", default=2, type=int)
-parser.add_argument("--embedding_dim", default=32, type=int)
+#parser.add_argument("--embedding_dim", default=32, type=int)
+parser.add_argument("--embedding_dim", default=300, type=int)
+
 
 ##### Dataset params
 parser.add_argument("--dataset", default="HDFS", type=str)
@@ -31,21 +33,21 @@ parser.add_argument("--window_size", default=10, type=int)
 parser.add_argument("--stride", default=1, type=int)
 
 ##### Input params
-#parser.add_argument("--feature_type", default="sequentials", type=str, choices=["sequentials", "semantics"])
-parser.add_argument("--feature_type", default=["sequentials"], type=str, choices=["sequentials", "semantics"])
+parser.add_argument("--feature_type", default=["semantics", "quantitatives"], type=str, choices=["sequentials", "semantics"])
+#parser.add_argument("--feature_type", default=["sequentials"], type=str, choices=["sequentials", "semantics"])
 
 parser.add_argument("--label_type", default="next_log", type=str)
 parser.add_argument("--use_tfidf", action="store_true")
 parser.add_argument("--max_token_len", default=50, type=int)
 parser.add_argument("--min_token_count", default=1, type=int)
 # Uncomment the following to use pretrained word embeddings. The "embedding_dim" should be set as 300   (fasttext)
-# parser.add_argument(
-#     "--pretrain_path", default="../data/pretrain/wiki-news-300d-1M.vec", type=str
-# )
+parser.add_argument(
+     "--pretrain_path", default="data/pretrain/wiki-news-300d-1M.vec", type=str
+ )
 
 ##### Training params
 parser.add_argument("--epoches", default=100, type=int)
-parser.add_argument("--batch_size", default=1024, type=int)
+parser.add_argument("--batch_size", default=512, type=int)
 parser.add_argument("--learning_rate", default=0.01, type=float)
 parser.add_argument("--topk", default=3, type=int)
 parser.add_argument("--patience", default=3, type=int)
@@ -75,9 +77,7 @@ if __name__ == "__main__":
     )
 
     dataset_test = log_dataset(session_test, feature_type=params["feature_type"])
-    dataloader_test = DataLoader(
-        dataset_test, batch_size=4096, shuffle=False, pin_memory=True
-    )
+    dataloader_test = DataLoader(dataset_test, batch_size=512, shuffle=False, pin_memory=True) #batch_size=4096
 
     model = LSTM(meta_data=ext.meta_data, model_save_path=model_save_path, **params)
 

@@ -271,7 +271,7 @@ class ForcastBasedModel(nn.Module):
     def __input2device(self, batch_input):
         #dict_batch = {k: v.to(self.device) for k, v in batch_input.items()}
         dict_batch = {k: v.to(self.device) for k, v in batch_input.items() if k != 'features'}
-        dict_batch['features'] = [feature.to(self.device) for feature in batch_input['features']]
+        dict_batch['features'] = [feature.to(self.device) for feature in batch_input['features']] #turned into list of features
         return dict_batch
         
     def save_model(self):

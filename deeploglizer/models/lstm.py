@@ -112,7 +112,7 @@ class LSTM(ForcastBasedModel):
         x = features[0] #sequence
         x = self.embedder(x)
 
-        if self.feature_type == "semantics":
+        if "semantics" in self.feature_type:
             if not self.use_tfidf:
                 x = x.sum(dim=-2)  # add tf-idf
 
@@ -124,7 +124,7 @@ class LSTM(ForcastBasedModel):
             # representation = outputs.mean(dim=1)
             representation = outputs[:, -1, :] # last step of LSTM (batch_size, window_size, embeddings_zize)
 
-        if len(input_dict["features"]) > 1: # count vector or another sequence feature
+        if len(features) > 1: # count vector or another sequence feature
             x_extra = features[1] # counts
             outputs_extra, _ = self.rnn_extra(x_extra.float())
             representation = torch.cat((representation, outputs_extra[:, -1, :]), -1)

@@ -54,7 +54,7 @@ class Vocab:
                 word_lst.extend(res)
         return word_lst
 
-    def gen_pretrain_matrix(self, pretrain_path, type="semantic"):
+    def gen_pretrain_matrix(self, pretrain_path, type="semantics"):
 
         logging.info("Generating a pretrain matrix.")
 
@@ -327,7 +327,8 @@ class FeatureExtractor(BaseEstimator):
             logging.info('Unrecognized label type "{}"'.format(self.label_type))
             exit()
 
-        if self.feature_type == "semantics":
+        if any(map(self.feature_type.__contains__, ["sentences", "quantitatives"])):
+        # if "semantics" in self.feature_type:
             logging.info("Using semantics.")
             logging.info("Building vocab.")
             self.vocab.build_vocab(self.ulog_train)
@@ -344,7 +345,7 @@ class FeatureExtractor(BaseEstimator):
             if self.use_tfidf:
                 self.vocab.fit_tfidf(total_logs)
 
-        if self.feature_type == "sentences":
+        elif "sentences" in self.feature_type:
             logging.info("Using sentences.")
             logging.info("Building vocab.")
             self.vocab.build_vocab(self.log2id_train)
@@ -391,7 +392,7 @@ class FeatureExtractor(BaseEstimator):
         else:
             self.__generate_windows(session_dict, self.stride)
 
-        if self.feature_type == "sentences":
+        if "sentences" in self.feature_type:
 
             self.id2log_test.update({idx: log for idx, log in enumerate(self.ulog, 2)})
 
@@ -400,7 +401,7 @@ class FeatureExtractor(BaseEstimator):
             log2idx["PADDING"] = np.zeros(indice.shape[1]).reshape(-1)
             logging.info("Extracting sentence features.")
 
-        if self.feature_type == "semantics":
+        if "semantics" in self.feature_type:
             if self.use_tfidf:
                 indice = self.vocab.transform_tfidf(ulog).toarray()
             else:
@@ -418,10 +419,10 @@ class FeatureExtractor(BaseEstimator):
                 feature_dict["sequentials"] = self.__windows2sequential(windows)
 
             # generate semantics features # use logid -> token id list
-            if self.feature_type == "semantics":
+            if "semantics" in self.feature_type:
                 feature_dict["semantics"] = self.__window2semantics(windows, log2idx)
 
-            if self.feature_type == "sentences":
+            if "sentences" in self.feature_type:
                 feature_dict["sentences"] = self.__window2sentences(windows, log2idx) # TODO
 
             # generate quantitative features # count logid in each window
