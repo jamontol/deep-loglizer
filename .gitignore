@@ -131,3 +131,4 @@ dmypy.json
 
 experiment_records/
 data/pretrain/
+data/data_cache

@@ -122,7 +122,7 @@ class LSTM(ForcastBasedModel):
             representation = self.attn(outputs)
         else:
             # representation = outputs.mean(dim=1)
-            representation = outputs[:, -1, :] # last step of LSTM (batch_size, window_size, embeddings_zize)
+            representation = outputs[:, -1, :] # last step of LSTM (batch_size, window_size, hidden_zize)
 
         if len(features) > 1: # count vector or another sequence feature
             x_extra = features[1] # counts

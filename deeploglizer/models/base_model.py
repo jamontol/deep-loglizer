@@ -256,6 +256,7 @@ class ForcastBasedModel(nn.Module):
                     "f1": f1_score(y, pred),
                     "rc": recall_score(y, pred),
                     "pc": precision_score(y, pred),
+                    "spec": recall_score(np.logical_not(y), np.logical_not(pred)),
                     "top{}-acc".format(topk): window_topk_acc,
                     "pred": results
                     #"abnormal_log": [0,0,0,0,0,1,0,0,1]

@@ -22,7 +22,7 @@ parser.add_argument("--num_layers", default=2, type=int)
 parser.add_argument("--num_directions", default=2, type=int)
 #parser.add_argument("--embedding_dim", default=32, type=int)
 parser.add_argument("--embedding_dim", default=300, type=int)
-
+#parser.add_argument("--embedding_dim", default=385, type=int)
 
 ##### Dataset params
 parser.add_argument("--dataset", default="HDFS", type=str)
@@ -33,8 +33,8 @@ parser.add_argument("--window_size", default=10, type=int)
 parser.add_argument("--stride", default=1, type=int)
 
 ##### Input params
-parser.add_argument("--feature_type", default=["semantics", "quantitatives"], type=str, choices=["sequentials", "semantics"])
-#parser.add_argument("--feature_type", default=["sequentials"], type=str, choices=["sequentials", "semantics"])
+#parser.add_argument("--feature_type", default=["sequentials", "quantitatives"], type=str, choices=["sequentials", "semantics"])
+parser.add_argument("--feature_type", default=["semantics","quantitatives"], type=str, choices=["sequentials", "semantics", "sentences", "quantitatives"])
 
 parser.add_argument("--label_type", default="next_log", type=str)
 parser.add_argument("--use_tfidf", action="store_true")
@@ -42,8 +42,9 @@ parser.add_argument("--max_token_len", default=50, type=int)
 parser.add_argument("--min_token_count", default=1, type=int)
 # Uncomment the following to use pretrained word embeddings. The "embedding_dim" should be set as 300   (fasttext)
 parser.add_argument(
-     "--pretrain_path", default="data/pretrain/wiki-news-300d-1M.vec", type=str
- )
+    #"--pretrain_path", default="data/data_cache/spanish/embeddings.parquet", type=str
+   "--pretrain_path", default="data/pretrain/wiki-news-300d-1M.vec", type=str
+  )
 
 ##### Training params
 parser.add_argument("--epoches", default=100, type=int)
@@ -65,10 +66,12 @@ if __name__ == "__main__":
     seed_everything(params["random_seed"])
 
     session_train, session_test = load_sessions(data_dir=params["data_dir"])
+    session_total = {**session_train, **session_test}
 
     ext = FeatureExtractor(**params)
 
-    session_train = ext.fit_transform(session_train)
+    session_total = ext.fit(session_total)
+    session_train = ext.transform(session_train)
     session_test = ext.transform(session_test, datatype="test")
 
     dataset_train = log_dataset(session_train, feature_type=params["feature_type"])
@@ -81,12 +84,14 @@ if __name__ == "__main__":
 
     model = LSTM(meta_data=ext.meta_data, model_save_path=model_save_path, **params)
 
-    eval_results = model.fit(
+    model.fit(
         dataloader_train,
         test_loader=dataloader_test,
         epoches=params["epoches"],
         learning_rate=params["learning_rate"],
     )
+
+    eval_results = model.evaluate(dataloader_test)
 
     result_str = "\t".join(["{}-{:.4f}".format(k, v) for k, v in eval_results.items() if k != 'pred'])
 
