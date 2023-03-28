@@ -45,8 +45,16 @@ class Transformer(ForcastBasedModel):
             encoder_layer, num_layers=num_layers
         )
 
+        self.rnn_extra = nn.LSTM(
+        input_size=1, #added dimension for quantitative features
+        hidden_size=self.hidden_size,
+        batch_first=True,
+        num_layers=num_layers,
+        bidirectional=False,
+        )
+
         self.criterion = nn.CrossEntropyLoss()
-        self.prediction_layer = nn.Linear(embedding_dim, num_labels)
+        self.prediction_layer = nn.Linear(embedding_dim + (len(self.feature_type)-1)*hidden_size, num_labels)
 
     def forward(self, input_dict):
         if self.label_type == "anomaly":
@@ -54,10 +62,15 @@ class Transformer(ForcastBasedModel):
         elif self.label_type == "next_log":
             y = input_dict["window_labels"].long().view(-1)
         self.batch_size = y.size()[0]
-        x = input_dict["features"]
+
+        features = input_dict["features"]
+
+        x = features[0] #list iof features
+
+        #x = input_dict["features"]
         x = self.embedder(x)
 
-        if self.feature_type == "semantics":
+        if "semantics" in self.feature_type:
             if not self.use_tfidf:
                 x = x.sum(dim=-2)  # add tf-idf
 
@@ -68,6 +81,11 @@ class Transformer(ForcastBasedModel):
         x_transformed = self.transformer_encoder(x_t.float())
         representation = x_transformed.transpose(1, 0).mean(dim=1)
         # representation = x_transformed[0]
+
+        if len(features) > 1: # count vector or another sequence feature
+            x_extra = features[1] # counts
+            outputs_extra, _ = self.rnn_extra(x_extra.float())
+            representation = torch.cat((representation, outputs_extra[:, -1, :]), -1)
 
         logits = self.prediction_layer(representation)
         y_pred = logits.softmax(dim=-1)

@@ -109,7 +109,7 @@ class LSTM(ForcastBasedModel):
 
         features = input_dict["features"]
 
-        x = features[0] #sequence
+        x = features[0] #list iof features
         x = self.embedder(x)
 
         if "semantics" in self.feature_type:
