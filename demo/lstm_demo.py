@@ -34,7 +34,7 @@ parser.add_argument("--stride", default=1, type=int)
 
 ##### Input params
 #parser.add_argument("--feature_type", default=["sequentials", "quantitatives"], type=str, choices=["sequentials", "semantics"])
-parser.add_argument("--feature_type", default=["semantics","quantitatives"], type=str, choices=["sequentials", "semantics", "sentences", "quantitatives"])
+parser.add_argument("--feature_type", default=["sequentials"], type=str, choices=["sequentials", "semantics", "sentences", "quantitatives"])
 
 parser.add_argument("--label_type", default="next_log", type=str)
 parser.add_argument("--use_tfidf", action="store_true")

@@ -3,6 +3,7 @@ import torch
 import random
 import os
 import numpy as np
+import pandas as pd
 import json
 import pickle
 import random
@@ -117,3 +118,13 @@ def load_pickle(file_path):
     with open(file_path, "rb") as fr:
         return pickle.load(fr)
 
+def plot_train_valid_loss(save_dir):
+    train_loss = pd.read_csv(save_dir + "train_log.csv")
+    valid_loss = pd.read_csv(save_dir + "eval_log.csv")
+    sns.lineplot(x="epoch",y="loss" , data = train_loss, label="train loss")
+    sns.lineplot(x="epoch",y="loss" , data = valid_loss, label="eval loss")
+    plt.title("epoch vs train loss vs eval loss")
+    plt.legend
+    plt.savefig(save_dir+"train_eval_loss.png")
+    plt.show()
+    print("plot done")

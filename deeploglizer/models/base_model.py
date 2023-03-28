@@ -65,7 +65,12 @@ class ForcastBasedModel(nn.Module):
         self.anomaly_ratio = anomaly_ratio  # only used for auto encoder
         self.patience = patience
         self.time_tracker = {}
-
+        
+        self.log = {"train": {key: [] for key in ["epoch", "loss"]},
+                    "eval": {key: [] for key in ["epoch", "loss"]}
+                    }
+        self.model_save_path = model_save_path
+        
         os.makedirs(model_save_path, exist_ok=True)
         self.model_save_file = os.path.join(model_save_path, "model.ckpt")
         if any(map(self.feature_type.__contains__, ["sequentials", "semantics", "sentences"])): #feature_type in ["sequentials", "semantics"]:
@@ -79,11 +84,11 @@ class ForcastBasedModel(nn.Module):
         else:
             logging.info(f'Unrecognized feature type, except sequentials or semantics, got {feature_type}')
 
-    def evaluate(self, test_loader, dtype="test"):
+    def evaluate(self, test_loader, epoch, dtype="test"):
         logging.info("Evaluating {} data.".format(dtype))
 
         if self.label_type == "next_log":
-            return self.__evaluate_next_log(test_loader, dtype=dtype)
+            return self.__evaluate_next_log(test_loader, epoch, dtype=dtype)
         elif self.label_type == "anomaly":
             return self.__evaluate_anomaly(test_loader, dtype=dtype)
         elif self.label_type == "none":
@@ -171,14 +176,21 @@ class ForcastBasedModel(nn.Module):
             logging.info({k: f"{v:.3f}" for k, v in eval_results.items()})
             return eval_results
 
-    def __evaluate_next_log(self, test_loader, dtype="test"):
+    def __evaluate_next_log(self, test_loader, epoch, dtype="test"):
         model = self.eval()  # set to evaluation mode
         with torch.no_grad():
             y_pred = []
             store_dict = defaultdict(list)
             infer_start = time.time()
+            batch_cnt_eval = 0
+            epoch_loss_eval = 0
             for batch_input in test_loader:
                 return_dict = model.forward(self.__input2device(batch_input))
+                ####################################
+                loss_eval = return_dict["loss"]
+                epoch_loss_eval += loss_eval.item()
+                batch_cnt_eval += 1
+                ####################################
                 y_pred = return_dict["y_pred"]
                 y_prob_topk, y_pred_topk = torch.topk(y_pred, self.topk)  # b x topk
 
@@ -196,6 +208,14 @@ class ForcastBasedModel(nn.Module):
 
                 store_dict["y_pred_topk"].extend(y_pred_topk.data.cpu().numpy())
                 store_dict["y_prob_topk"].extend(y_prob_topk.data.cpu().numpy())
+            
+            epoch_loss_eval = epoch_loss_eval / batch_cnt_eval
+            logging.info(
+                "Evaluation loss: {:.5f}".format(epoch_loss_eval)
+            )
+            self.log['eval']['epoch'].append(epoch)
+            self.log['eval']['loss'].append(epoch_loss_eval)
+
             infer_end = time.time()
             logging.info("Finish inference. [{:.2f}s]".format(infer_end - infer_start))
             self.time_tracker["test"] = infer_end - infer_start
@@ -320,9 +340,11 @@ class ForcastBasedModel(nn.Module):
                 "Epoch {}/{}, training loss: {:.5f} [{:.2f}s]".format(epoch, epoches, epoch_loss, epoch_time_elapsed)
             )
             self.time_tracker["train"] = epoch_time_elapsed
+            self.log['train']['epoch'].append(epoch)
+            self.log['train']['loss'].append(epoch_loss)
 
             if test_loader is not None and (epoch % 1 == 0):
-                eval_results = self.evaluate(test_loader)
+                eval_results = self.evaluate(test_loader, epoch)
                 if eval_results["f1"] > best_f1:
                     best_f1 = eval_results["f1"]
                     best_results = eval_results
@@ -337,4 +359,16 @@ class ForcastBasedModel(nn.Module):
                         break
 
         self.load_model(self.model_save_file)
+        self.save_log() # Save train and eval loss 
+
         return best_results
+
+    def save_log(self):
+        
+        try:
+            for key, values in self.log.items():
+                output_file = os.path.join(self.model_save_path, f"{key}_log.csv")
+                pd.DataFrame(values).to_csv(output_file, index=False)
+            print("Log saved")
+        except:
+            print("Failed to save logs")
