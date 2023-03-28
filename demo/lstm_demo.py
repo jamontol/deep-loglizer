@@ -34,7 +34,7 @@ parser.add_argument("--stride", default=1, type=int)
 
 ##### Input params
 #parser.add_argument("--feature_type", default=["sequentials", "quantitatives"], type=str, choices=["sequentials", "semantics"])
-parser.add_argument("--feature_type", default=["sequentials"], type=str, choices=["sequentials", "semantics", "sentences", "quantitatives"])
+parser.add_argument("--feature_type", default=["sequentials","quantitatives"], type=str, choices=["sequentials", "semantics", "sentences", "quantitatives"])
 
 parser.add_argument("--label_type", default="next_log", type=str)
 parser.add_argument("--use_tfidf", action="store_true")
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         learning_rate=params["learning_rate"],
     )
 
-    eval_results = model.evaluate(dataloader_test)
+    eval_results = model.evaluate(dataloader_test, epoch=1)
 
     result_str = "\t".join(["{}-{:.4f}".format(k, v) for k, v in eval_results.items() if k != 'pred'])
 

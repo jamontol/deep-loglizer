@@ -352,7 +352,7 @@ class FeatureExtractor(BaseEstimator):
             logging.info('Unrecognized label type "{}"'.format(self.label_type))
             exit()
 
-        if any(map(self.feature_type.__contains__, ["semantics", "quantitatives"])):
+        if any(map(self.feature_type.__contains__, ["semantics"])):
         # if "semantics" in self.feature_type:
             logging.info("Using semantics.")
             logging.info("Building vocab.")
@@ -386,7 +386,7 @@ class FeatureExtractor(BaseEstimator):
                 )
 
         #elif self.feature_type == "sequentials":
-        elif any(map(self.feature_type.__contains__, ["sequentials", "quantitatives"])):
+        elif any(map(self.feature_type.__contains__, ["sequentials"])):
 
             self.meta_data["vocab_size"] = len(self.log2id_train)
 
