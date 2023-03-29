@@ -63,10 +63,11 @@ class log_dataset(Dataset):
                 features_list.append(data_dict["features"]["semantics"])
             if "sequentials" in feature_type:
                 features_list.append(data_dict["features"]["sequentials"]) # features = data_dict["features"]["sequentials"] #
-            if "quantitatives" in feature_type:
-                features_list.append(data_dict["features"]["quantitatives"])
             if "sentences" in feature_type:
                 features_list.append(data_dict["features"]["sentences"])
+            if "quantitatives" in feature_type:
+                features_list.append(data_dict["features"]["quantitatives"])
+
 
             window_labels = data_dict["window_labels"]
             window_anomalies = data_dict["window_anomalies"]

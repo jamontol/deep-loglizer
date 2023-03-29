@@ -370,7 +370,7 @@ class FeatureExtractor(BaseEstimator):
             if self.use_tfidf:
                 self.vocab.fit_tfidf(total_logs)
 
-        elif "sentences" in self.feature_type:
+        elif any(map(self.feature_type.__contains__, ["sentences"])):
             logging.info("Using sentences.")
             logging.info("Building vocab.")
             self.vocab.build_vocab(self.log2id_train, type_embeddings='sentences')

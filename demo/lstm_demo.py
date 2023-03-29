@@ -21,8 +21,8 @@ parser.add_argument("--hidden_size", default=128, type=int)
 parser.add_argument("--num_layers", default=2, type=int)
 parser.add_argument("--num_directions", default=2, type=int)
 #parser.add_argument("--embedding_dim", default=32, type=int)
-parser.add_argument("--embedding_dim", default=300, type=int)
-#parser.add_argument("--embedding_dim", default=385, type=int)
+#parser.add_argument("--embedding_dim", default=300, type=int)
+parser.add_argument("--embedding_dim", default=384, type=int)
 
 ##### Dataset params
 parser.add_argument("--dataset", default="HDFS", type=str)
@@ -34,7 +34,7 @@ parser.add_argument("--stride", default=1, type=int)
 
 ##### Input params
 #parser.add_argument("--feature_type", default=["sequentials", "quantitatives"], type=str, choices=["sequentials", "semantics"])
-parser.add_argument("--feature_type", default=["sequentials","quantitatives"], type=str, choices=["sequentials", "semantics", "sentences", "quantitatives"])
+parser.add_argument("--feature_type", default=["sentences","quantitatives"], type=str, choices=["sequentials", "semantics", "sentences", "quantitatives"])
 
 parser.add_argument("--label_type", default="next_log", type=str)
 parser.add_argument("--use_tfidf", action="store_true")
@@ -42,8 +42,8 @@ parser.add_argument("--max_token_len", default=50, type=int)
 parser.add_argument("--min_token_count", default=1, type=int)
 # Uncomment the following to use pretrained word embeddings. The "embedding_dim" should be set as 300   (fasttext)
 parser.add_argument(
-    #"--pretrain_path", default="data/data_cache/spanish/embeddings.parquet", type=str
-   "--pretrain_path", default="data/pretrain/wiki-news-300d-1M.vec", type=str
+    "--pretrain_path", default="data/data_cache/spanish/embeddings.parquet", type=str
+   #"--pretrain_path", default="data/pretrain/wiki-news-300d-1M.vec", type=str
   )
 
 ##### Training params

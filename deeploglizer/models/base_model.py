@@ -84,7 +84,7 @@ class ForcastBasedModel(nn.Module):
         else:
             logging.info(f'Unrecognized feature type, except sequentials or semantics, got {feature_type}')
 
-    def evaluate(self, test_loader, epoch, dtype="test"):
+    def evaluate(self, test_loader, epoch=1, dtype="test"):
         logging.info("Evaluating {} data.".format(dtype))
 
         if self.label_type == "next_log":
