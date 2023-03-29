@@ -222,6 +222,7 @@ class ForcastBasedModel(nn.Module):
             store_df = pd.DataFrame(store_dict)
             best_result = None
             best_f1 = -float("inf")
+            best_spec = -float("inf")
 
             count_start = time.time()
 
@@ -268,9 +269,9 @@ class ForcastBasedModel(nn.Module):
                 y = (session_df["window_anomalies"] > 0).astype(int)
                 window_topk_acc = 1 - store_df[f"window_pred_anomaly_{topk}"].sum() / len(store_df)
 
-                results=None
-                if topk == self.topk: 
-                    results = pd.concat([session_df['session_idx'], pred, window_pred_anomaly],axis=1)
+                #results=None
+                #if topk == self.topk: 
+                #    results = pd.concat([session_df['session_idx'], pred, window_pred_anomaly],axis=1)
 
                 eval_results = {
                     "f1": f1_score(y, pred),
@@ -278,12 +279,14 @@ class ForcastBasedModel(nn.Module):
                     "pc": precision_score(y, pred),
                     "spec": recall_score(np.logical_not(y), np.logical_not(pred)),
                     "top{}-acc".format(topk): window_topk_acc,
-                    "pred": results
-                    #"abnormal_log": [0,0,0,0,0,1,0,0,1]
+                    #"pred": results
                 }
                 logging.info({k: f"{v:.3f}" for k, v in eval_results.items() if k != 'pred'})
-                if eval_results["f1"] >= best_f1:
+                #if eval_results["f1"] >= best_f1:
+                if eval_results["spec"] >= best_spec:
+                    eval_results["pred"] = pd.concat([session_df['session_idx'], pred, window_pred_anomaly],axis=1)
                     best_result = eval_results
+                    best_spec = eval_results["spec"]
                     best_f1 = eval_results["f1"]
             count_end = time.time()
             logging.info("Finish counting [{:.2f}s]".format(count_end - count_start))
