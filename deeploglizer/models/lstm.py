@@ -51,6 +51,7 @@ class LSTM(ForcastBasedModel):
         label_type="next_log",
         eval_type="session",
         topk=5,
+        patience= 3,
         use_tfidf=False,
         freeze=False,
         gpu=-1,
@@ -63,6 +64,7 @@ class LSTM(ForcastBasedModel):
             label_type=label_type,
             eval_type=eval_type,
             topk=topk,
+            patience=patience,
             use_tfidf=use_tfidf,
             embedding_dim=embedding_dim,
             freeze=freeze,
@@ -109,7 +111,7 @@ class LSTM(ForcastBasedModel):
 
         features = input_dict["features"]
 
-        x = features[0] #list iof features
+        x = features[0] #list of features
         x = self.embedder(x)
 
         if "semantics" in self.feature_type:

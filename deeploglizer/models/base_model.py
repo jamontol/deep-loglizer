@@ -136,8 +136,11 @@ class ForcastBasedModel(nn.Module):
                 "rc": recall_score(y, pred),
                 "pc": precision_score(y, pred),
                 "acc": accuracy_score(y, pred),
+                "spec": recall_score(np.logical_not(y), np.logical_not(pred)),
+                "pred": pred
             }
-            logging.info({k: f"{v:.3f}" for k, v in eval_results.items()})
+
+            logging.info({k: f"{v:.3f}" for k, v in eval_results.items() if k != 'pred'})
             return eval_results
 
     def __evaluate_anomaly(self, test_loader, dtype="test"):
@@ -172,6 +175,7 @@ class ForcastBasedModel(nn.Module):
                 "rc": recall_score(y, pred),
                 "pc": precision_score(y, pred),
                 "acc": accuracy_score(y, pred),
+                "spec": recall_score(np.logical_not(y), np.logical_not(pred)),
             }
             logging.info({k: f"{v:.3f}" for k, v in eval_results.items()})
             return eval_results
@@ -221,7 +225,7 @@ class ForcastBasedModel(nn.Module):
             self.time_tracker["test"] = infer_end - infer_start
             store_df = pd.DataFrame(store_dict)
             best_result = None
-            best_f1 = -float("inf")
+            #best_f1 = -float("inf")
             best_spec = -float("inf")
 
             count_start = time.time()
@@ -288,6 +292,8 @@ class ForcastBasedModel(nn.Module):
                     best_result = eval_results
                     best_spec = eval_results["spec"]
                     best_f1 = eval_results["f1"]
+                    best_rc = eval_results["rc"]
+                    best_pc = eval_results["pc"]
             count_end = time.time()
             logging.info("Finish counting [{:.2f}s]".format(count_end - count_start))
             return best_result
@@ -313,14 +319,15 @@ class ForcastBasedModel(nn.Module):
         logging.info("Loading model from {}".format(self.model_save_file))
         self.load_state_dict(torch.load(model_save_file, map_location=self.device))
 
-    def fit(self, train_loader, test_loader=None, epoches=10, learning_rate=1.0e-3):
+    def fit(self, train_loader, test_loader=None, epoches=10, learning_rate=1.0e-3, stop_criteria = "f1"):
         self.to(self.device)
         logging.info(
             "Start training on {} batches with {}.".format(
                 len(train_loader), self.device
             )
         )
-        best_f1 = -float("inf")
+        #best_f1 = -float("inf")
+        best_metric = -float("inf")
         best_results = None
         worse_count = 0
         for epoch in range(1, epoches + 1):
@@ -348,8 +355,10 @@ class ForcastBasedModel(nn.Module):
 
             if test_loader is not None and (epoch % 1 == 0):
                 eval_results = self.evaluate(test_loader, epoch)
-                if eval_results["f1"] > best_f1:
-                    best_f1 = eval_results["f1"]
+                #if eval_results["f1"] > best_f1:
+                if eval_results[stop_criteria] > best_metric:
+                    #best_f1 = eval_results["f1"]
+                    best_metric = eval_results[stop_criteria]
                     best_results = eval_results
                     best_results["converge"] = int(epoch)
                     

@@ -18,6 +18,7 @@ class AutoEncoder(ForcastBasedModel):
         label_type="none",
         eval_type="session",
         topk=5,
+        patience=3,
         use_tfidf=False,
         freeze=False,
         gpu=-1,
@@ -30,6 +31,7 @@ class AutoEncoder(ForcastBasedModel):
             label_type=label_type,
             eval_type=eval_type,
             topk=topk,
+            patience=patience,
             use_tfidf=use_tfidf,
             embedding_dim=embedding_dim,
             freeze=freeze,
@@ -60,14 +62,16 @@ class AutoEncoder(ForcastBasedModel):
         self.criterion = nn.MSELoss(reduction="none")
 
     def forward(self, input_dict):
-        x = input_dict["features"]
+        features = input_dict["features"]
+        x = features[0] #list of features
+
         self.batch_size = x.size()[0]
         if self.embedding_dim == 1:
             x = x.unsqueeze(-1)
         else:
             x = self.embedder(x)
 
-        if self.feature_type == "semantics":
+        if "semantics" in self.feature_type:
             if not self.use_tfidf:
                 x = x.sum(dim=-2)  # add tf-idf
 
